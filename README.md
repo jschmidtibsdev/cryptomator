@@ -1,97 +1,126 @@
-[![cryptomator](cryptomator.png)](https://cryptomator.org/)
+# Cryptomator (Full Feature Fork)
 
-[![Build](https://github.com/cryptomator/cryptomator/workflows/Build/badge.svg)](https://github.com/cryptomator/cryptomator/actions/workflows/build.yml?query=branch%3Adevelop)
-[![Known Vulnerabilities](https://snyk.io/test/github/cryptomator/cryptomator/badge.svg)](https://snyk.io/test/github/cryptomator/cryptomator)
-[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=cryptomator_cryptomator&metric=alert_status)](https://sonarcloud.io/dashboard?id=cryptomator_cryptomator)
-[![Mastodon](https://img.shields.io/mastodon/follow/176112?domain=mastodon.online&style=flat)](https://mastodon.online/@cryptomator)
-[![Crowdin](https://badges.crowdin.net/cryptomator/localized.svg)](https://translate.cryptomator.org/)
-[![Latest Release](https://img.shields.io/github/release/cryptomator/cryptomator.svg)](https://github.com/cryptomator/cryptomator/releases/latest)
-[![Community](https://img.shields.io/badge/help-Community-orange.svg)](https://community.cryptomator.org)
+Fork of [cryptomator/cryptomator](https://github.com/cryptomator/cryptomator) with all features unlocked (dark mode, automatic theme, no donate banner). Licensed under GPL-3.0.
 
-## Supporting Cryptomator
+## What Changed
 
-Cryptomator is provided free of charge as an open-source project despite the high development effort and is therefore dependent on donations. If you are also interested in further development, we offer you the opportunity to support us:
+The license check in `src/main/java/org/cryptomator/common/LicenseHolder.java` was modified so that `isValidLicense()` always returns `true` and `validLicenseProperty()` always binds to `true`. This unlocks:
 
-- [One-time or recurring donation via Cryptomator's website.](https://cryptomator.org/#donate)
-- [Become a sponsor via Cryptomator's sponsors website.](https://cryptomator.org/sponsors/)
+- Dark mode and automatic theme switching
+- Hides the donate/supporter certificate banner
 
-### Gold Sponsors
+No functionality was removed — the supporter certificate UI still works if you want to enter a key.
 
-Become our Gold Sponsor and showcase your brand to a targeted audience! Please contact us if you are interested.
+## Prerequisites (Windows)
 
-### Silver Sponsors
+You need four things installed. Open PowerShell **as Administrator** and run:
 
-<table>
-  <tbody>
-    <tr>
-      <td><a href="https://www.gee-whiz.de/"><img src="https://cryptomator.org/img/sponsors/geewhiz.svg" alt="gee-whiz" height="56"></a></td>
-      <td><a href="https://www.route4me.com/"><img src="https://cryptomator.org/img/sponsors/route4me.svg" alt="Route4Me" height="56"></a></td>
-    </tr>
-  </tbody>
-</table>
+### 1. JDK 25 (Azul Zulu, recommended by upstream)
 
-### Special Shoutout
+```powershell
+winget install Azul.Zulu.25.JDK
+```
 
-Continuous integration hosting for ARM64 builds is provided by [MacStadium](https://www.macstadium.com/company/opensource).
+After install, set `JAVA_HOME` if not set automatically:
 
-<a href="https://www.macstadium.com/company/opensource"><img src="https://uploads-ssl.webflow.com/5ac3c046c82724970fc60918/5c019d917bba312af7553b49_MacStadium-developerlogo.png" alt="MacStadium" height="100"></a>
+```powershell
+# Find where it installed (adjust version as needed)
+$javaPath = (Get-ChildItem "C:\Program Files\Zulu" -Filter "zulu-25*" | Select-Object -First 1).FullName
+[Environment]::SetEnvironmentVariable("JAVA_HOME", $javaPath, "User")
+```
 
----
+### 2. Maven (manual install — not available in winget)
 
-## Introduction
+1. Download the latest binary zip from https://maven.apache.org/download.cgi (e.g. `apache-maven-3.9.9-bin.zip`)
+2. Extract to `C:\Program Files\Maven`
+3. Add to PATH:
 
-Cryptomator offers multi-platform transparent client-side encryption of your files in the cloud.
+```powershell
+# Run as Administrator
+[Environment]::SetEnvironmentVariable("PATH", $env:PATH + ";C:\Program Files\Maven\apache-maven-3.9.9\bin", "Machine")
+```
 
-Download native binaries of Cryptomator on [cryptomator.org](https://cryptomator.org/) or clone and build Cryptomator using Maven (instructions below).
+### 3. PowerShell Core (the build script requires `pwsh`)
 
-## Features
+```powershell
+winget install Microsoft.PowerShell
+```
 
-- Works with Dropbox, Google Drive, OneDrive, MEGA, pCloud, ownCloud, Nextcloud and any other cloud storage service which synchronizes with a local directory
-- Open Source means: No backdoors, control is better than trust
-- Client-side: No accounts, no data shared with any online service
-- Totally transparent: Just work on the virtual drive as if it were a USB flash drive
-- AES encryption with 256-bit key length
-- File names get encrypted
-- Folder structure gets obfuscated
-- Use as many vaults in your Dropbox as you want, each having individual passwords
-- More than Five thousand commits for the security of your data!! :tada:
+### 4. .NET SDK (needed for WiX toolset)
 
-### Privacy
+```powershell
+winget install Microsoft.DotNet.SDK.8
+```
 
-- 256-bit keys (unlimited strength policy bundled with native binaries)
-- Scrypt key derivation
-- Cryptographically secure random numbers for salts, IVs and the masterkey of course
-- Sensitive data is wiped from the heap asap
-- Lightweight: [Complexity kills security](https://www.schneier.com/essays/archives/1999/11/a_plea_for_simplicit.html)
+### 5. WiX Toolset 6 (creates the .msi/.exe installers)
 
-### Consistency
+```powershell
+dotnet tool install --global wix --version 6.0.2
+wix extension add --global WixToolset.UI.wixext/6.0.2
+wix extension add --global WixToolset.Util.wixext/6.0.2
+wix extension add --global WixToolset.BootstrapperApplications.wixext/6.0.2
+```
 
-- Authenticated encryption is used for file content to recognize changed ciphertext before decryption
-- I/O operations are transactional and atomic, if the filesystems support it
-- Each file contains all information needed for decryption (except for the key of course), no common metadata means no [SPOF](http://en.wikipedia.org/wiki/Single_point_of_failure)
+### Verify everything
 
-### Security Architecture
+**Restart your terminal**, then:
 
-For more information on the security details visit [cryptomator.org](https://docs.cryptomator.org/security/architecture/).
+```powershell
+java -version      # should show 25.x
+mvn -version       # should show 3.9+
+wix --version      # should show 6.0.2
+```
 
 ## Building
 
-### Dependencies
+### Quick: just compile
 
-* JDK 25 (e.g. temurin, zulu)
-* Maven 3
-
-### Run Maven
-
-```
-mvn clean install
-# or mvn clean install -Pwin
-# or mvn clean install -Pmac
-# or mvn clean install -Plinux
+```powershell
+mvn package -DskipTests
 ```
 
-This will build all the jars and bundle them together with their OS-specific dependencies under `target`. This can now be used to build native packages.
+### Full: build the .msi and .exe installer
 
-## License
+From the repo root:
 
-This project is dual-licensed under the GPLv3 for FOSS projects as well as a commercial license for independent software vendors and resellers. If you want to modify this application under different conditions, feel free to contact our support team.
+```powershell
+cd dist\win
+.\build.bat
+```
+
+This will:
+1. Compile the Java project with Maven
+2. Create a custom JRE with `jlink` (no Java needed on target machine)
+3. Package an app image with `jpackage`
+4. Build a `.msi` installer with WiX
+5. Bundle the `.msi` + WinFsp into a standalone `.exe` installer
+
+Output:
+- `dist\win\installer\Cryptomator-*.msi` — standalone MSI
+- `dist\win\installer\Cryptomator-Installer.exe` — EXE bundle (includes WinFsp)
+
+### Run without packaging
+
+```powershell
+mvn javafx:run
+```
+
+## Merging Upstream Changes
+
+Add the upstream remote (one-time setup):
+
+```powershell
+git remote add upstream https://github.com/cryptomator/cryptomator.git
+```
+
+Pull in recent changes:
+
+```powershell
+git fetch upstream
+git merge upstream/develop
+```
+
+The only file likely to conflict is `LicenseHolder.java`. When resolving, keep these two changes:
+
+1. In the constructor: `this.validLicenseProperty = Bindings.createBooleanBinding(() -> true);`
+2. In `isValidLicense()`: `return true;`
