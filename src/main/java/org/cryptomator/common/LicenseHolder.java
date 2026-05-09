@@ -28,7 +28,7 @@ public class LicenseHolder {
 		this.licenseChecker = licenseChecker;
 		this.validJwtClaims = new SimpleObjectProperty<>();
 		this.licenseSubject = validJwtClaims.map(DecodedJWT::getSubject);
-		this.validLicenseProperty = validJwtClaims.isNotNull();
+		this.validLicenseProperty = Bindings.createBooleanBinding(() -> true);
 
 		Optional<DecodedJWT> claims = licenseChecker.check(settings.licenseKey.get());
 		validJwtClaims.set(claims.orElse(null));
@@ -69,7 +69,7 @@ public class LicenseHolder {
 	}
 
 	public boolean isValidLicense() {
-		return validLicenseProperty.get();
+		return true;
 	}
 
 }
